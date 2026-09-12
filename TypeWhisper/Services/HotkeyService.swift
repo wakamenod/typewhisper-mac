@@ -1934,9 +1934,10 @@ final class HotkeyService: ObservableObject, @unchecked Sendable {
 
     @discardableResult
     private func handleEvent(_ event: NSEvent, source: HotkeyEventSource, canSuppressSubmit: Bool = true) -> Bool {
-        // TypeWhisper's own Cmd+V / Cmd+C is posted while the triggering shortcut can still be
-        // held. It must reach the target app and must not count as that shortcut's repeat or release.
-        if event.type == .keyDown || event.type == .keyUp, event.modifierFlags.contains(.command),
+        // TypeWhisper's own paste / copy shortcut (Cmd+V, or Control+Y for Emacs) is posted while
+        // the triggering shortcut can still be held. It must reach the target app and must not
+        // count as that shortcut's repeat or release.
+        if event.type == .keyDown || event.type == .keyUp,
            event.cgEvent?.getIntegerValueField(.eventSourceUserData)
             == TextInsertionService.simulatedClipboardShortcutEventMarker {
             return false
