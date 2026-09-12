@@ -5440,6 +5440,22 @@ final class TypeWhisperIntegrationTests: XCTestCase {
     }
 
     @MainActor
+    func testPasteKeystrokeDefaultsToCommandVForUnknownApps() {
+        XCTAssertEqual(TextInsertionService.pasteKeystroke(for: nil), .commandV)
+        XCTAssertEqual(TextInsertionService.pasteKeystroke(for: "com.apple.TextEdit"), .commandV)
+        XCTAssertEqual(TextInsertionService.pasteKeystroke(for: "com.googlecode.iterm2"), .commandV)
+    }
+
+    @MainActor
+    func testPasteKeystrokeUsesControlYForEmacs() {
+        let keystroke = TextInsertionService.pasteKeystroke(for: "org.gnu.Emacs")
+
+        XCTAssertEqual(keystroke.key, "y")
+        XCTAssertEqual(keystroke.flags, .maskControl)
+        XCTAssertNotEqual(keystroke, .commandV)
+    }
+
+    @MainActor
     func testPreserveClipboardKeepsGeneratedTextUntilFallbackRestoreWhenPasteIsUnverified() async throws {
         let service = TextInsertionService()
         let pasteboard = NSPasteboard.withUniqueName()
