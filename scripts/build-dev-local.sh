@@ -106,6 +106,40 @@ write_build_marker() {
   } > "$marker"
 }
 
+# The build runs with signing disabled, which leaves only the linker's ad-hoc
+# signature on the executable. macOS ties Accessibility and other privacy grants
+# to the code signature, so sign the whole bundle with a stable identity to keep
+# those grants valid across rebuilds. Set TYPEWHISPER_DEV_SIGN_IDENTITY to choose
+# the identity; otherwise the first Apple Development identity is used, falling
+# back to ad-hoc ("-"), which is valid but changes on every build.
+sign_installed_app() {
+  local app="$1"
+  local identity="${TYPEWHISPER_DEV_SIGN_IDENTITY:-}"
+
+  if [[ -z "$identity" ]]; then
+    identity="$(security find-identity -v -p codesigning 2>/dev/null \
+      | awk '/"Apple Development: / { print $2; exit }')"
+  fi
+  if [[ -z "$identity" ]]; then
+    log "warning: no Apple Development identity found; signing ad-hoc, so privacy grants reset on every build"
+    identity="-"
+  fi
+
+  # Running the tests with the same derived data embeds the test bundle in the
+  # app. It does not belong in the installed app, and a partial one from a
+  # failed test build makes codesign reject the whole bundle.
+  local test_bundle
+  for test_bundle in "$app"/Contents/PlugIns/*.xctest; do
+    [[ -e "$test_bundle" ]] || continue
+    trash_if_present "$test_bundle"
+    log "removed test bundle: $test_bundle"
+  done
+
+  codesign --force --deep --sign "$identity" "$app"
+  codesign --verify --deep --strict "$app"
+  log "signed app with identity: $identity"
+}
+
 trash_stale_dev_apps() {
   local keep_app="$1"
   local search_roots=(
@@ -150,6 +184,7 @@ trash_if_present "$installed_app"
 ditto "$app_path" "$installed_app"
 write_build_marker "$installed_app"
 xattr -cr "$installed_app" >/dev/null 2>&1 || true
+sign_installed_app "$installed_app"
 
 trash_stale_dev_apps "$installed_app"
 
