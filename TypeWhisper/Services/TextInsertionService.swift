@@ -183,7 +183,10 @@ final class TextInsertionService {
         "dev.warp.Warp-Preview",
         "dev.warp.WarpPreview",
         "com.mitchellh.ghostty",
-        "com.cmuxterm.app"
+        "com.cmuxterm.app",
+        // Emacs takes a paste but exposes no focused text element, so verification would
+        // report every dictation as missing its text field.
+        "org.gnu.Emacs"
     ]
     // Gecko editors can report successful AX writes while applying text at
     // the wrong position or more than once. Prefer one synthetic paste.
