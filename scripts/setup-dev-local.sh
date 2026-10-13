@@ -124,4 +124,7 @@ cat <<EOF
   1. Grant Microphone and Accessibility in System Settings > Privacy & Security.
   2. Choose a speech engine and model.
   3. Turn on the API server in Settings > Advanced.
+  4. To bring over the official app's terms and corrections, run:
+       $repo_root/scripts/copy-dictionary-to-dev.py --dry-run
+     then again without --dry-run.
 EOF
